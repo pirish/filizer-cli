@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - "**"
+    tags:
+      - "v*.*.*"
 
 jobs:
   test:
@@ -49,8 +51,8 @@ jobs:
 
   build:
     name: Build for ${{ matrix.os }}
-    needs: [test, tag]
-    if: needs.tag.outputs.new_tag
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -90,9 +92,9 @@ jobs:
 
   release:
     name: Create GitHub Release
-    needs: [build, tag]
+    needs: build
     runs-on: ubuntu-latest
-    if: needs.tag.outputs.new_tag
+    if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
     steps:
@@ -102,7 +104,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.tag.outputs.new_tag }}
+          tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           files: |
             filizer-linux/filizer
